@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "s3_master"
+require "s3_master/cli"
+
+S3MasterCli.start
