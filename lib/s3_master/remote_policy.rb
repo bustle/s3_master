@@ -16,6 +16,7 @@ module S3Master
         policy_merge: true,
       }
     }
+    POLICY_TYPES = POLICIES.keys.freeze
 
     def initialize(bucket_name, policy_type)
       @client = Aws::S3::Client.new
@@ -33,6 +34,8 @@ module S3Master
         @body = {}
       end
     end
+
+    def pretty_body() JSON.neat_generate(body, sort: true) ; end
 
     def write(local_policy)
       if local_policy.empty?

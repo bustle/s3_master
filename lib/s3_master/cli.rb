@@ -24,14 +24,14 @@ class S3MasterCli < Thor
 
   desc "diff <bucket> <policy-type>", "Show differences between the current and the desired policy."
   def diff(bucket, policy_type)
-    bkt = Aws::S3::Bucket.new(bucket)
-    config = YAML.load_file(options[:"config-file"])
+    config = ActiveSupport::HashWithIndifferentAccess.new(YAML.load_file(options[:"config-file"]))
 
     @remote_policy = S3Master::RemotePolicy.new(bucket, policy_type)
     @local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options)
 
     #byebug
     if options[:debug]
+      bkt = Aws::S3::Bucket.new(bucket)
       puts "%s: %s" % [bkt.name, bkt.url]
       puts "=== Remote Policy:\n%s" % [JSON.neat_generate(@remote_policy.body, sort: true)]
       puts "=== Local Policy:\n%s" % [JSON.neat_generate(@local_policy.body, sort: true)]
@@ -52,11 +52,29 @@ class S3MasterCli < Thor
 
     exit 0 if policy_diff.identical? || ! (options[:force] || yes?("Proceed? (y/N)"))
     
-    bkt = Aws::S3::Bucket.new(bucket)
-    config = YAML.load_file(options[:"config-file"])
+    config = ActiveSupport::HashWithIndifferentAccess.new(YAML.load_file(options[:"config-file"]))
 
     local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options)
     remote_policy = S3Master::RemotePolicy.new(bucket, policy_type)
     remote_policy.write(local_policy)
+  end
+
+  desc "fetch <bucket> <policy-type>", "Retrieves the specified policy for the bucket and saves it in the config-specified file"
+  def fetch(buckets=nil, policy_types=S3Master::RemotePolicy::POLICY_TYPES)
+    config = ActiveSupport::HashWithIndifferentAccess.new(YAML.load_file(options[:"config-file"]))
+    buckets ||= config[:buckets].keys
+
+    Array(buckets).each do |bucket|
+      Array(policy_types).each do |policy_type|
+        local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(skip_load: true))
+        remote_policy = S3Master::RemotePolicy.new(bucket, policy_type)
+
+        if !local_policy.basename.nil?
+          local_policy.write(remote_policy)
+        else
+          puts "%s policy:\n%s" % [policy_type, remote_policy.pretty_body]
+        end
+      end
+    end
   end
 end
