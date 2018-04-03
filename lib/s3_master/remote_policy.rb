@@ -25,6 +25,12 @@ module S3Master
     }
     POLICY_TYPES = POLICIES.keys.freeze
 
+    NO_POLICY_EXCEPTIONS = [
+      Aws::S3::Errors::NoSuchLifecycleConfiguration,
+      Aws::S3::Errors::ReplicationConfigurationNotFoundError,
+      Aws::S3::Errors::NoSuchConfiguration
+    ]
+
     def initialize(bucket_name, policy_type, options={})
       @client = Aws::S3::Client.new
       @bucket_name = bucket_name
@@ -38,7 +44,7 @@ module S3Master
       begin
         args = base_args
         @body = @client.send(POLICIES[@policy_type][:get], args).to_hash
-      rescue Aws::S3::Errors::NoSuchLifecycleConfiguration, Aws::S3::Errors::ReplicationConfigurationNotFoundError => e
+      rescue *NO_POLICY_EXCEPTIONS => e
         # No policy there currently
         @body = {}
       end
