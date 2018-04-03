@@ -14,7 +14,8 @@ module S3Master
         put: :put_bucket_replication,
         delete: :delete_bucket_replication,
         policy_merge: true,
-      }
+        ensure_versioning: true,
+      },
     }
     POLICY_TYPES = POLICIES.keys.freeze
 
@@ -43,6 +44,10 @@ module S3Master
       else
         args = {bucket: @bucket_name}
 
+        if POLICIES[@policy_type][:ensure_versioning]
+          self.ensure_versioning!
+        end
+
         if POLICIES[@policy_type][:policy_merge]
           args.merge!(local_policy.body)
         else
@@ -51,6 +56,11 @@ module S3Master
 
         @client.send(POLICIES[@policy_type][:put], args)
       end
+    end
+
+    def ensure_versioning!
+      bkt = Aws::S3::Bucket.new(@bucket_name)
+      bkt.versioning.status == "Enabled" || bkt.versioning.enable
     end
   end
 end
