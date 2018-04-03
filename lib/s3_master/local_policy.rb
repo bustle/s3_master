@@ -14,7 +14,17 @@ module S3Master
     def empty?() @body.nil? || @body.empty? ; end
     def pretty_body() JSON.neat_generate(body, sort: true) ; end
 
-    def basename() @config["buckets"][@bucket_name][@policy_type.to_s] ; end
+    def basename()
+      possible_basename = @config["buckets"][@bucket_name][@policy_type.to_s]
+
+      if possible_basename.kind_of?(String)
+        possible_basename
+      elsif @options[:id]
+        possible_basename[@options[:id]]
+      else
+        raise(RuntimeError, "Can't determine the path to the policy: #{@bucket_name} / #{@policy_type}")
+      end
+    end
     def path() File.join(@options[:"policy-dir"], self.basename) ; end
 
     def load_policy

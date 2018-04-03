@@ -16,20 +16,28 @@ module S3Master
         policy_merge: true,
         ensure_versioning: true,
       },
+      inventory: {
+        get: :get_bucket_inventory_configuration,
+        put: :put_bucket_inventory_configuration,
+        delete: :delete_bucket_inventory_configuration,
+        requires_id: true
+      },
     }
     POLICY_TYPES = POLICIES.keys.freeze
 
-    def initialize(bucket_name, policy_type)
+    def initialize(bucket_name, policy_type, options={})
       @client = Aws::S3::Client.new
       @bucket_name = bucket_name
       @policy_type = policy_type.to_sym
+      @options = options
       raise(RuntimeError, "Policy type #{policy_type} not supported") if !POLICIES.has_key?(@policy_type)
       load_policy
     end
 
     def load_policy
       begin
-        @body = @client.send(POLICIES[@policy_type][:get], {bucket: @bucket_name}).to_hash
+        args = base_args
+        @body = @client.send(POLICIES[@policy_type][:get], args).to_hash
       rescue Aws::S3::Errors::NoSuchLifecycleConfiguration, Aws::S3::Errors::ReplicationConfigurationNotFoundError => e
         # No policy there currently
         @body = {}
@@ -42,7 +50,7 @@ module S3Master
       if local_policy.empty?
         @client.send(POLICIES[@policy_type][:delete], {bucket: @bucket_name})
       else
-        args = {bucket: @bucket_name}
+        args = base_args
 
         if POLICIES[@policy_type][:ensure_versioning]
           self.ensure_versioning!
@@ -61,6 +69,14 @@ module S3Master
     def ensure_versioning!
       bkt = Aws::S3::Bucket.new(@bucket_name)
       bkt.versioning.status == "Enabled" || bkt.versioning.enable
+    end
+
+    def base_args
+      args = {bucket: @bucket_name}
+      if POLICIES[@policy_type][:requires_id]
+        args[:id] = @options[:id]
+      end
+      args
     end
   end
 end
