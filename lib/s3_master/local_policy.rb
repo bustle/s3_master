@@ -12,11 +12,17 @@ module S3Master
 
     def empty?() @body.nil? || @body.empty? ; end
 
+    def basename() @config["buckets"][@bucket_name][@policy_type] ; end
     def path
-      File.join(@options[:"policy-dir"], @config["buckets"][@bucket_name][@policy_type])
+      File.join(@options[:"policy-dir"], self.basename)
     end
     def load_policy
-      @body = JSON.parse(File.binread(path)).deep_transform_keys{|k| k.underscore.to_sym }
+      @body = if basename == false
+                # Empty policy
+                {}
+              else
+                JSON.parse(File.binread(path)).deep_transform_keys{|k| k.underscore.to_sym }
+              end
     end
   end
 end
