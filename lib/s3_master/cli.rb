@@ -27,11 +27,8 @@ class S3MasterCli < Thor
     bkt = Aws::S3::Bucket.new(bucket)
     config = YAML.load_file(options[:"config-file"])
 
-    case policy_type
-    when "lifecycle" then 
-      @remote_policy = S3Master::RemotePolicy.new(bucket, policy_type)
-      @local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options)
-    end
+    @remote_policy = S3Master::RemotePolicy.new(bucket, policy_type)
+    @local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options)
 
     #byebug
     if options[:debug]
@@ -58,16 +55,8 @@ class S3MasterCli < Thor
     bkt = Aws::S3::Bucket.new(bucket)
     config = YAML.load_file(options[:"config-file"])
 
-    case policy_type
-    when "lifecycle" then
-      local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options)
-      lc = bkt.lifecycle_configuration
-
-      if local_policy.empty?
-        lc.delete
-      else
-        lc.put({lifecycle_configuration: local_policy.body})
-      end
-    end
+    local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options)
+    remote_policy = S3Master::RemotePolicy.new(bucket, policy_type)
+    remote_policy.write(local_policy)
   end
 end
