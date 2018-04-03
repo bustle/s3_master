@@ -13,7 +13,7 @@ module S3Master
         get: :get_bucket_replication,
         put: :put_bucket_replication,
         delete: :delete_bucket_replication,
-        policy_key: :replication_configuration,
+        policy_merge: true,
       }
     }
 
@@ -28,7 +28,7 @@ module S3Master
     def load_policy
       begin
         @body = @client.send(POLICIES[@policy_type][:get], {bucket: @bucket_name}).to_hash
-      rescue Aws::S3::Errors::NoSuchLifecycleConfiguration => e
+      rescue Aws::S3::Errors::NoSuchLifecycleConfiguration, Aws::S3::Errors::ReplicationConfigurationNotFoundError => e
         # No policy there currently
         @body = {}
       end
@@ -38,11 +38,15 @@ module S3Master
       if local_policy.empty?
         @client.send(POLICIES[@policy_type][:delete], {bucket: @bucket_name})
       else
-        policy_key = POLICIES[@policy_type][:policy_key]
-        @client.send(POLICIES[@policy_type][:put], {
-          :bucket     => @bucket_name,
-          policy_key  => local_policy.body,
-        })
+        args = {bucket: @bucket_name}
+
+        if POLICIES[@policy_type][:policy_merge]
+          args.merge!(local_policy.body)
+        else
+          args[POLICIES[@policy_type][:policy_key]] = local_policy.body
+        end
+
+        @client.send(POLICIES[@policy_type][:put], args)
       end
     end
   end
