@@ -5,14 +5,15 @@ module S3Master
     def initialize(cfg, bucket_name, policy_type, options={})
       @config = cfg
       @bucket_name = bucket_name
-      @policy_type = policy_type
+      @policy_type = policy_type.to_sym
       @options = options
 
       load_policy if !options[:skip_load]
     end
 
+    def preserve_keys?() S3Master::RemotePolicy::POLICIES[@policy_type][:preserve_keys] ; end
     def empty?() @body.nil? || @body.empty? ; end
-    def pretty_body() JSON.neat_generate(body, sort: true) ; end
+    def pretty_body() JSON.neat_generate(body, sort: (self.preserve_keys? ? false : true)) ; end
 
     def basename()
       possible_basename = @config["buckets"][@bucket_name][@policy_type.to_s]
@@ -32,8 +33,14 @@ module S3Master
                 # Empty policy
                 {}
               else
-                JSON.parse(File.binread(path)).deep_transform_keys{|k| k.underscore.to_sym }
+                JSON.parse(File.binread(path))
               end
+
+      if ! self.preserve_keys?
+        @body.deep_transform_keys!{|k| k.underscore.to_sym }
+      end
+
+      @body
     end
 
     def write(other_policy)

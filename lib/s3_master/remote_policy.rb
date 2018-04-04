@@ -23,6 +23,13 @@ module S3Master
         policy_merge: true,
         requires_id: true,
       },
+      access_policy: {
+        get: :get_bucket_policy,
+        put: :put_bucket_policy,
+        delete: :delete_bucket_policy,
+        policy_key: :policy,
+        preserve_keys: true,
+      },
     }
     POLICY_TYPES = POLICIES.keys.freeze
 
@@ -41,10 +48,28 @@ module S3Master
       load_policy
     end
 
+    def policy_key() POLICIES[@policy_type][:policy_key] ; end
+    def parse_as_string() POLICIES[@policy_type][:parse_as_string] || false ; end
+
+    def inflate(read_policy)
+      if @policy_type == :access_policy
+        JSON.parse(read_policy[policy_key].string)
+      else
+        read_policy
+      end
+    end
+
+    def deflate(policy_hash)
+      if @policy_type == :access_policy
+        policy_hash[policy_key] = JSON.generate(policy_hash[policy_key])
+      end
+      policy_hash
+    end
+
     def load_policy
       begin
         args = base_args
-        @body = @client.send(POLICIES[@policy_type][:get], args).to_hash
+        @body = self.inflate(@client.send(POLICIES[@policy_type][:get], args).to_hash)
       rescue *NO_POLICY_EXCEPTIONS => e
         # No policy there currently
         @body = {}
@@ -66,10 +91,10 @@ module S3Master
         if POLICIES[@policy_type][:policy_merge]
           args.merge!(local_policy.body)
         else
-          args[POLICIES[@policy_type][:policy_key]] = local_policy.body
+          args[policy_key] = local_policy.body
         end
 
-        @client.send(POLICIES[@policy_type][:put], args)
+        @client.send(POLICIES[@policy_type][:put], self.deflate(args))
       end
     end
 
