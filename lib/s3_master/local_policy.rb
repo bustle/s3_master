@@ -20,7 +20,7 @@ module S3Master
       if possible_basename.kind_of?(String)
         possible_basename
       elsif @options[:id]
-        possible_basename[@options[:id]]
+        possible_basename[@options[:id]] || raise(RuntimeError, "Unable to locate policy with id '#{@options[:id]}' in config #{possible_basename}")
       else
         raise(RuntimeError, "Can't determine the path to the policy: #{@bucket_name} / #{@policy_type}")
       end

@@ -27,7 +27,7 @@ class S3MasterCli < Thor
     config = ActiveSupport::HashWithIndifferentAccess.new(YAML.load_file(options[:"config-file"]))
 
     @remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
-    @local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id))
+    @local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id).symbolize_keys)
 
     #byebug
     if options[:debug]
@@ -54,7 +54,7 @@ class S3MasterCli < Thor
     
     config = ActiveSupport::HashWithIndifferentAccess.new(YAML.load_file(options[:"config-file"]))
 
-    local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id))
+    local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id).symbolize_keys)
     remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
     remote_policy.write(local_policy)
   end
@@ -66,7 +66,7 @@ class S3MasterCli < Thor
 
     Array(buckets).each do |bucket|
       Array(policy_types).each do |policy_type|
-        local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(skip_load: true, id: policy_id))
+        local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(skip_load: true, id: policy_id).symbolize_keys)
         remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
 
         if !local_policy.basename.nil?

@@ -20,7 +20,8 @@ module S3Master
         get: :get_bucket_inventory_configuration,
         put: :put_bucket_inventory_configuration,
         delete: :delete_bucket_inventory_configuration,
-        requires_id: true
+        policy_merge: true,
+        requires_id: true,
       },
     }
     POLICY_TYPES = POLICIES.keys.freeze
