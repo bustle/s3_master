@@ -1,3 +1,5 @@
+require 'aws-sdk-resources'
+
 module S3Master
   class RemotePolicy
     attr_reader :body
