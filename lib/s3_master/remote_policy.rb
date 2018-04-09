@@ -81,11 +81,11 @@ module S3Master
     def pretty_body() JSON.neat_generate(body, sort: true) ; end
 
     def write(local_policy)
-      if local_policy.empty?
-        @client.send(POLICIES[@policy_type][:delete], {bucket: @bucket_name})
-      else
-        args = base_args
+      args = base_args
 
+      if local_policy.empty?
+        @client.send(POLICIES[@policy_type][:delete], args)
+      else
         if POLICIES[@policy_type][:ensure_versioning]
           self.ensure_versioning!
         end
