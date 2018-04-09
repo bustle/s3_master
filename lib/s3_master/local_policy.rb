@@ -8,6 +8,10 @@ module S3Master
       @policy_type = policy_type.to_sym
       @options = options
 
+      if @config["buckets"][@bucket_name].nil?
+        raise(RuntimeError, "No bucket named '#{@bucket_name}' found in loaded config.")
+      end
+
       load_policy if !options[:skip_load]
     end
 
