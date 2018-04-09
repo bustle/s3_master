@@ -1,3 +1,6 @@
+require 'rubygems'
+require 'bundler/setup'
+
 require 'active_support/core_ext/hash'
 require 'aws-sdk-resources'
 require 'diffy'
@@ -7,8 +10,6 @@ require 'thor'
 require 'yaml'
 
 require 's3_master'
-
-require 'byebug'
 
 Diffy::Diff.default_format = :color
 
