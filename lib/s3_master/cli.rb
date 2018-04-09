@@ -36,25 +36,33 @@ class S3MasterCli < Thor
     end
 
     policy_diff = S3Master::PolicyDiffer.new(remote_policy.body, local_policy.body)
+    prefix = "#{bucket}/#{policy_type}"
+    prefix += "/#{policy_id}" if policy_id
+
     if policy_diff.identical?
-      puts "Local and remote policies match."
+      puts "#{prefix}: Local and remote policies match."
     else
-      puts "Policy diff:\n%s" % [policy_diff.to_s]
+      puts "#{prefix} diff:\n%s" % [policy_diff.to_s]
     end
     policy_diff
   end
 
-  desc "apply <bucket> <policy-type> [policy-id]", "Appies the local policy to the bucket."
-  def apply(bucket, policy_type, policy_id=nil)
-    policy_diff = diff(bucket, policy_type, policy_id)
-
-    exit 0 if policy_diff.identical? || ! (options[:force] || yes?("Proceed? (y/N)"))
-    
+  desc "apply [<bucket>] [<policy-type>] [policy-id]", "Appies the local policy to the bucket."
+  def apply(cli_bucket=nil, cli_policy_type=nil, cli_policy_id=nil)
     config = S3Master::Config.new(options[:"config-file"])
+    config.each do |bucket, policy_type, policy_id|
+      next if !cli_bucket.nil? && cli_bucket != bucket ||
+              !cli_policy_type.nil? && cli_policy_type != policy_type ||
+              !cli_policy_id.nil? && cli_policy_id != policy_id
 
-    local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id).symbolize_keys)
-    remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
-    remote_policy.write(local_policy)
+      policy_diff = diff(bucket, policy_type, policy_id)
+
+      next if policy_diff.identical? || ! (options[:force] || yes?("Proceed? (y/N)"))
+
+      local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id).symbolize_keys)
+      remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
+      remote_policy.write(local_policy)
+    end
   end
 
   desc "fetch <bucket> <policy-type> [policy-id]", "Retrieves the specified policy for the bucket and saves it in the config-specified file"
