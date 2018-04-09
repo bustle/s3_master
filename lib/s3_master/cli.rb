@@ -6,9 +6,7 @@ require 'neatjson'
 require 'thor'
 require 'yaml'
 
-require 's3_master/local_policy'
-require 's3_master/policy_differ'
-require 's3_master/remote_policy'
+require 's3_master'
 
 require 'byebug'
 
@@ -24,20 +22,19 @@ class S3MasterCli < Thor
 
   desc "diff <bucket> <policy-type> [policy-id]", "Show differences between the current and the desired policy."
   def diff(bucket, policy_type, policy_id=nil)
-    config = ActiveSupport::HashWithIndifferentAccess.new(YAML.load_file(options[:"config-file"]))
+    config = S3Master::Config.new(options[:"config-file"])
 
-    @remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
-    @local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id).symbolize_keys)
+    remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
+    local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id).symbolize_keys)
 
-    #byebug
     if options[:debug]
       bkt = Aws::S3::Bucket.new(bucket)
       puts "%s: %s" % [bkt.name, bkt.url]
-      puts "=== Remote Policy:\n%s" % [JSON.neat_generate(@remote_policy.body, sort: true)]
-      puts "=== Local Policy:\n%s" % [JSON.neat_generate(@local_policy.body, sort: true)]
+      puts "=== Remote Policy:\n%s" % [JSON.neat_generate(remote_policy.body, sort: true)]
+      puts "=== Local Policy:\n%s" % [JSON.neat_generate(local_policy.body, sort: true)]
     end
 
-    policy_diff = S3Master::PolicyDiffer.new(@remote_policy.body, @local_policy.body)
+    policy_diff = S3Master::PolicyDiffer.new(remote_policy.body, local_policy.body)
     if policy_diff.identical?
       puts "Local and remote policies match."
     else
@@ -52,7 +49,7 @@ class S3MasterCli < Thor
 
     exit 0 if policy_diff.identical? || ! (options[:force] || yes?("Proceed? (y/N)"))
     
-    config = ActiveSupport::HashWithIndifferentAccess.new(YAML.load_file(options[:"config-file"]))
+    config = S3Master::Config.new(options[:"config-file"])
 
     local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id).symbolize_keys)
     remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
@@ -61,7 +58,7 @@ class S3MasterCli < Thor
 
   desc "fetch <bucket> <policy-type> [policy-id]", "Retrieves the specified policy for the bucket and saves it in the config-specified file"
   def fetch(buckets=nil, policy_types=S3Master::RemotePolicy::POLICY_TYPES, policy_id=nil)
-    config = ActiveSupport::HashWithIndifferentAccess.new(YAML.load_file(options[:"config-file"]))
+    config = S3Master::Config.new(options[:"config-file"])
     buckets ||= config[:buckets].keys
 
     Array(buckets).each do |bucket|
@@ -76,5 +73,30 @@ class S3MasterCli < Thor
         end
       end
     end
+  end
+
+  desc "status [<bucket>]", "Checks if the policies have differences"
+  def status(user_bucket=nil)
+    config = S3Master::Config.new(options[:"config-file"])
+
+    any_differences = false
+    config.each do |bucket, policy_type, policy_id|
+      next if !user_bucket.nil? && user_bucket != bucket
+      local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id).symbolize_keys)
+      remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
+
+      policy_diff = S3Master::PolicyDiffer.new(remote_policy.body, local_policy.body)
+      if !policy_diff.identical?
+        any_differences = true
+
+        if policy_id.nil?
+          puts "%s: %s" % [bucket, policy_type]
+        else
+          puts "%s: %s %s" % [bucket, policy_type, policy_id]
+        end
+      end
+    end
+
+    puts "No differences detected." if !any_differences
   end
 end
