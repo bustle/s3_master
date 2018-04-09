@@ -7,6 +7,7 @@ module S3Master
       @bucket_name = bucket_name
       @policy_type = policy_type.to_sym
       @options = options
+      @policy_id = options[:id]
 
       if @config["buckets"][@bucket_name].nil?
         raise(RuntimeError, "No bucket named '#{@bucket_name}' found in loaded config.")
@@ -19,21 +20,11 @@ module S3Master
     def empty?() @body.nil? || @body.empty? ; end
     def pretty_body() JSON.neat_generate(body, sort: (self.preserve_keys? ? false : true)) ; end
 
-    def basename()
-      possible_basename = @config["buckets"][@bucket_name][@policy_type.to_s]
-
-      if possible_basename.kind_of?(String)
-        possible_basename
-      elsif @options[:id]
-        possible_basename[@options[:id]] || raise(RuntimeError, "Unable to locate policy with id '#{@options[:id]}' in config #{possible_basename}")
-      else
-        raise(RuntimeError, "Can't determine the path to the policy: #{@bucket_name} / #{@policy_type}")
-      end
-    end
+    def basename() @config.template_relname(@bucket_name, @policy_type, @policy_id) ; end
     def path() File.join(@options[:"policy-dir"], self.basename) ; end
 
     def load_policy
-      @body = if basename == false
+      @body = if basename.nil? || basename == false
                 # Empty policy
                 {}
               else
