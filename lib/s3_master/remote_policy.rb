@@ -36,9 +36,10 @@ module S3Master
     POLICY_TYPES = POLICIES.keys.freeze
 
     NO_POLICY_EXCEPTIONS = [
+      Aws::S3::Errors::NoSuchBucketPolicy,
+      Aws::S3::Errors::NoSuchConfiguration,
       Aws::S3::Errors::NoSuchLifecycleConfiguration,
       Aws::S3::Errors::ReplicationConfigurationNotFoundError,
-      Aws::S3::Errors::NoSuchConfiguration
     ]
 
     def initialize(bucket_name, policy_type, options={})
