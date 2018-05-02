@@ -42,7 +42,7 @@ buckets:
 
 ```
 
-* Policies can be imported from S3 via the `fetch` subcommand.  Policies will written to the file specified in the `s3_policies.yml`, e.g. for the above, running:
+* Policies can be imported from S3 via the `fetch` subcommand.  Policies will be written to the file specified in the `s3_policies.yml`, e.g. for the above, running:
 
 `s3_master fetch bucket-a lifecycle`
 
@@ -68,7 +68,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/redterror/s3_master. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+Bug reports and pull requests are welcome on GitHub at https://github.com/bustle/s3_master. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
 ## License
 
@@ -76,4 +76,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the S3Master project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/redterror/s3_master/blob/master/CODE_OF_CONDUCT.md).
+Everyone interacting in the S3Master project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/bustle/s3_master/blob/master/CODE_OF_CONDUCT.md).
