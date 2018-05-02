@@ -11,6 +11,8 @@ module S3Master
       @cfg = ActiveSupport::HashWithIndifferentAccess.new(YAML.load_file(cfg_file))
     end
 
+    def region(bucket) @cfg[:buckets][bucket.to_s]["region"] ; end
+
     def has_subpolicies?(bucket, policy_type)
       @cfg[:buckets][bucket.to_s][policy_type.to_s].kind_of?(Hash)
     end
@@ -33,6 +35,7 @@ module S3Master
     def each(&block)
       @cfg[:buckets].each_pair do |bucket, policy_types|
         policy_types.each_pair do |policy_type, subpolicy|
+          next if ! S3Master::RemotePolicy.known_policy_type?(policy_type)
           (policy_ids(bucket, policy_type) || [nil]).each do |policy_id|
             block.call(bucket, policy_type, policy_id)
           end

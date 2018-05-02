@@ -25,7 +25,7 @@ class S3MasterCli < Thor
   def diff(bucket, policy_type, policy_id=nil)
     config = S3Master::Config.new(options[:"config-file"])
 
-    remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
+    remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id, region: config.region(bucket)})
     local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id).symbolize_keys)
 
     if options[:debug]
@@ -60,7 +60,7 @@ class S3MasterCli < Thor
       next if policy_diff.identical? || ! (options[:force] || yes?("Proceed? (y/N)"))
 
       local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id).symbolize_keys)
-      remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
+      remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id, region: config.region(bucket)})
       remote_policy.write(local_policy)
     end
   end
@@ -72,8 +72,9 @@ class S3MasterCli < Thor
 
     Array(buckets).each do |bucket|
       Array(policy_types).each do |policy_type|
+        next if ! S3Master::RemotePolicy.known_policy_type?(policy_type)
         local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(skip_load: true, id: policy_id).symbolize_keys)
-        remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
+        remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id, region: config.region(bucket)})
 
         if !local_policy.basename.nil?
           local_policy.write(remote_policy)
@@ -92,16 +93,16 @@ class S3MasterCli < Thor
     config.each do |bucket, policy_type, policy_id|
       next if !user_bucket.nil? && user_bucket != bucket
       local_policy = S3Master::LocalPolicy.new(config, bucket, policy_type, options.merge(id: policy_id).symbolize_keys)
-      remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id})
+      remote_policy = S3Master::RemotePolicy.new(bucket, policy_type, {id: policy_id, region: config.region(bucket)})
 
       policy_diff = S3Master::PolicyDiffer.new(remote_policy.body, local_policy.body)
       if !policy_diff.identical?
         any_differences = true
 
         if policy_id.nil?
-          puts "%s: %s" % [bucket, policy_type]
+          puts "* %s: %s" % [bucket, policy_type]
         else
-          puts "%s: %s %s" % [bucket, policy_type, policy_id]
+          puts "* %s: %s %s" % [bucket, policy_type, policy_id]
         end
       end
     end

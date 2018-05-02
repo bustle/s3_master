@@ -31,6 +31,7 @@ N.B. this is an alpha release!
 ```
 buckets:
   bucket-a:
+    region: us-east-1
     lifecycle: bucket-a/lifecycle.json
     replication: bucket-a/replication.json
     inventory:
@@ -57,7 +58,6 @@ A diff is shown and confirmation is requested by default.
 
 * Need some tests with `aruba`
 * Add support for S3 events policy.
-* Support a single `s3_policies.yml` file with buckets in multiple regions
 * Make an init subcommand
 
 ## Development

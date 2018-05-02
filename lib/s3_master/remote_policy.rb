@@ -42,7 +42,7 @@ module S3Master
     ]
 
     def initialize(bucket_name, policy_type, options={})
-      @client = Aws::S3::Client.new
+      @client = options[:region].nil? ? Aws::S3::Client.new() : Aws::S3::Client.new(region: options[:region])
       @bucket_name = bucket_name
       @policy_type = policy_type.to_sym
       @options = options
@@ -101,7 +101,7 @@ module S3Master
     end
 
     def ensure_versioning!
-      bkt = Aws::S3::Bucket.new(@bucket_name)
+      bkt = Aws::S3::Bucket.new(@bucket_name, client: @client)
       bkt.versioning.status == "Enabled" || bkt.versioning.enable
     end
 
@@ -112,5 +112,8 @@ module S3Master
       end
       args
     end
+
+    def self.known_policy_type?(policy) POLICIES.has_key?(policy.to_sym) ; end
+    def known_policy_type?(policy) self.class.known_policy_type(policy) ; end
   end
 end
