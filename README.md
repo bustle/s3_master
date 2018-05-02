@@ -1,8 +1,9 @@
-# S3Master
+# s3_master - Manage policies on existing S3 buckets
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/s3_master`. To experiment with that code, run `bin/console` for an interactive prompt.
+Inspired by [stack_master](https://github.com/envato/stack_master), `s3_master` aims to manage various policies on S3 buckets created outside of cloudformation.
+If your buckets were created via cloudformation, then you should use cfn to manage the policies.
 
-TODO: Delete this and the text above, and describe your gem
+`s3_master` provides a simple diff/push workflow so policy documents can be stored in git and reconciled against AWS easily.
 
 ## Installation
 
@@ -22,7 +23,42 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+N.B. this is an alpha release!
+
+* Make a `policies` directory to hold your json policy documents.
+* Make a `s3_policies.yml` file like:
+
+```
+buckets:
+  bucket-a:
+    lifecycle: bucket-a/lifecycle.json
+    replication: bucket-a/replication.json
+    inventory:
+      all: bucket-a/inventory-all.json
+  bucket-b:
+    lifecycle: bucket-b/lifecycle.json
+    replication: bucket-b/replication.json
+
+```
+
+* Policies can be imported from S3 via the `fetch` subcommand.  Policies will written to the file specified in the `s3_policies.yml`, e.g. for the above, running:
+
+`s3_master fetch bucket-a lifecycle`
+
+It would write out the current policy to `policies/bucket-a/lifecycle.json`
+
+* Policy changes are loaded to S3 via `apply`, e.g:
+
+`s3_master apply bucket-a lifecycle`
+
+A diff is shown and confirmation is requested by default.
+
+## TODO
+
+* Need some tests with `aruba`
+* Add support for S3 events policy.
+* Support a single `s3_policies.yml` file with buckets in multiple regions
+* Make an init subcommand
 
 ## Development
 
@@ -36,7 +72,7 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/redter
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).  [BDG Media](https://bustle.company/) sponsored this work. [Come work with us!](https://jobs.lever.co/bustle)
 
 ## Code of Conduct
 
