@@ -57,7 +57,7 @@ A diff is shown and confirmation is requested by default.
 ## TODO
 
 * Need some tests with `aruba`
-* Add support for S3 events policy.
+* Better warnings / error messages when the bucket requires a regional endpoint, and when an invalid policy-type is specified.
 * Make an init subcommand
 
 ## Development

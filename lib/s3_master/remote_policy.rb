@@ -32,6 +32,11 @@ module S3Master
         policy_key: :policy,
         preserve_keys: true,
       },
+      events: {
+        get: :get_bucket_notification_configuration,
+        put: :put_bucket_notification_configuration,
+        policy_key: :notification_configuration,
+      },
     }
     POLICY_TYPES = POLICIES.keys.freeze
 
@@ -63,7 +68,8 @@ module S3Master
     end
 
     def deflate(policy_hash)
-      if @policy_type == :access_policy
+      case @policy_type
+      when :access_policy
         policy_hash[policy_key] = JSON.generate(policy_hash[policy_key])
       end
       policy_hash
@@ -84,7 +90,7 @@ module S3Master
     def write(local_policy)
       args = base_args
 
-      if local_policy.empty?
+      if local_policy.empty? && POLICIES[@policy_type].has_key?(:delete)
         @client.send(POLICIES[@policy_type][:delete], args)
       else
         if POLICIES[@policy_type][:ensure_versioning]
