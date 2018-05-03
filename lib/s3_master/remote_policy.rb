@@ -25,7 +25,7 @@ module S3Master
         policy_merge: true,
         requires_id: true,
       },
-      access_policy: {
+      access: {
         get: :get_bucket_policy,
         put: :put_bucket_policy,
         delete: :delete_bucket_policy,
