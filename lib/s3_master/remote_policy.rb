@@ -1,4 +1,4 @@
-require 'aws-sdk-resources'
+require 'aws-sdk-s3'
 
 module S3Master
   class RemotePolicy

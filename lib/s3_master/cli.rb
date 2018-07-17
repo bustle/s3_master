@@ -2,7 +2,7 @@ require 'rubygems'
 require 'bundler/setup'
 
 require 'active_support/core_ext/hash'
-require 'aws-sdk-resources'
+require 'aws-sdk-s3'
 require 'diffy'
 require 'json'
 require 'neatjson'

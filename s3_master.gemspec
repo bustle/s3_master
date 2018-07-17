@@ -36,7 +36,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec", "~> 3.0"
 
   spec.add_dependency "activesupport", ">= 4.0"
-  spec.add_dependency "aws-sdk-resources", ">= 2.6"
+  spec.add_dependency "aws-sdk-s3", "~> 1"
   spec.add_dependency "diffy"
   spec.add_dependency "neatjson"
   spec.add_dependency "thor"
