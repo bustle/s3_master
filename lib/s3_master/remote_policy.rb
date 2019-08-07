@@ -60,7 +60,7 @@ module S3Master
     def parse_as_string() POLICIES[@policy_type][:parse_as_string] || false ; end
 
     def inflate(read_policy)
-      if @policy_type == :access_policy
+      if @policy_type == :access
         JSON.parse(read_policy[policy_key].string)
       else
         read_policy
@@ -69,7 +69,7 @@ module S3Master
 
     def deflate(policy_hash)
       case @policy_type
-      when :access_policy
+      when :access
         policy_hash[policy_key] = JSON.generate(policy_hash[policy_key])
       end
       policy_hash
