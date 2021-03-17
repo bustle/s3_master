@@ -110,6 +110,13 @@ class S3MasterCli < Thor
     puts "No differences detected." if !any_differences
   end
 
+  desc "remove BUCKET POLICY-TYPE", "Removes the specified policy type from the bucket."
+  def remove(user_bucket, policy_type)
+    #config = S3Master::Config.new(options[:"config-file"])
+    remote_policy = S3Master::RemotePolicy.new(user_bucket, policy_type)
+    remote_policy.remove
+  end
+
   desc "add-name-tag bucket1 bucket2 ...", "Adds a 'Name' tag to the bucket with its name, for cost reporting"
   option :tag, type: :string, default: 'Name'
   def add_name_tag(*buckets)

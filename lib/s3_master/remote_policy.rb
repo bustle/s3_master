@@ -107,6 +107,15 @@ module S3Master
       end
     end
 
+    def remove
+      args = base_args
+      if POLICIES[@policy_type].has_key?(:delete)
+        @client.send(POLICIES[@policy_type][:delete], args)
+      else
+        raise "Delete not supported for policy type #{@policy_type}"
+      end
+    end
+
     def ensure_versioning!
       bkt = Aws::S3::Bucket.new(@bucket_name, client: @client)
       bkt.versioning.status == "Enabled" || bkt.versioning.enable
