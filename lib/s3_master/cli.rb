@@ -109,4 +109,30 @@ class S3MasterCli < Thor
 
     puts "No differences detected." if !any_differences
   end
+
+  desc "add-name-tag bucket1 bucket2 ...", "Adds a 'Name' tag to the bucket with its name, for cost reporting"
+  option :tag, type: :string, default: 'Name'
+  def add_name_tag(*buckets)
+    buckets.each do |bucket_name|
+      bkt = Aws::S3::Bucket.new(bucket_name)
+
+      begin
+        tag_set = bkt.tagging.tag_set
+      rescue Aws::S3::Errors::NoSuchTagSet => e
+        tag_set = []
+      end
+
+      needs_name_tag = !tag_set.any?{|tag_obj| tag_obj.key == options[:tag]}
+
+      if needs_name_tag
+        tag_set << {key: options[:tag], value: bucket_name}
+        bkt.client.put_bucket_tagging({
+          bucket: bucket_name,
+          tagging: {
+            tag_set: tag_set
+          }
+        })
+      end
+    end
+  end
 end
